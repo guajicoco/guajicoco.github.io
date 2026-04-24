@@ -1,4 +1,7 @@
+from IPython.display import HTML, display
 
+# 完整的HTML代码 - 赣语方言3D词云（嫩鹅黄配色主题）
+html_code = '''
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -13,8 +16,8 @@
         }
         body {
             font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #8B6914 0%, #6B4E0A 50%, #4A3506 100%);
+            color: #F5E6C8;
             overflow-x: hidden;
             min-height: 100vh;
         }
@@ -26,19 +29,19 @@
         .header {
             text-align: center;
             padding: 20px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+            background: linear-gradient(to bottom, rgba(107,78,10,0.8), transparent);
             position: relative;
             z-index: 10;
         }
         .header h1 {
             font-size: 2em;
-            color: #ffd700;
+            color: #ebc167;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
         .header p {
             font-size: 1em;
-            color: #f0f0f0;
+            color: #D4C4A3;
         }
         .cloud-container {
             width: 100%;
@@ -63,8 +66,8 @@
             user-select: none;
             padding: 5px 12px;
             border-radius: 8px;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(235,193,103,0.15);
+            border: 1px solid rgba(235,193,103,0.4);
             white-space: nowrap;
             font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
             backdrop-filter: blur(4px);
@@ -73,16 +76,16 @@
             position: fixed;
             bottom: 20px;
             left: 20px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(74,53,6,0.9);
             padding: 15px;
             border-radius: 12px;
             backdrop-filter: blur(10px);
             min-width: 260px;
             z-index: 20;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(235,193,103,0.3);
         }
         .controls h3 {
-            color: #ffd700;
+            color: #ebc167;
             margin-bottom: 12px;
             font-size: 1.1em;
         }
@@ -94,12 +97,13 @@
             justify-content: space-between;
             font-size: 13px;
             margin-bottom: 5px;
+            color: #D4C4A3;
         }
         input[type="range"] {
             width: 100%;
             height: 4px;
             border-radius: 2px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(235,193,103,0.3);
             -webkit-appearance: none;
         }
         input[type="range"]:focus {
@@ -110,13 +114,13 @@
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: #ffd700;
+            background: #ebc167;
             cursor: pointer;
         }
         button {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            background: linear-gradient(135deg, #c9a03d, #a67c1e);
             border: none;
-            color: white;
+            color: #F5E6C8;
             padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
@@ -125,6 +129,9 @@
             width: 100%;
             transition: transform 0.2s;
         }
+        button:hover {
+            background: linear-gradient(135deg, #d4aa4a, #b8892a);
+        }
         button:active {
             transform: scale(0.98);
         }
@@ -132,33 +139,33 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: rgba(0,0,0,0.85);
+            background: rgba(74,53,6,0.92);
             padding: 15px;
             border-radius: 12px;
             backdrop-filter: blur(10px);
             max-width: 320px;
             z-index: 20;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(235,193,103,0.3);
         }
         .info-panel h3 {
-            color: #ffd700;
+            color: #ebc167;
             margin-bottom: 10px;
             font-size: 1em;
         }
         #selectedWord {
             font-size: 13px;
             line-height: 1.5;
-            color: #ddd;
+            color: #D4C4A3;
         }
         .word-meaning {
-            color: #ffd700;
+            color: #ebc167;
             font-weight: bold;
         }
         .footer {
             text-align: center;
             padding: 15px;
             font-size: 11px;
-            color: rgba(255,255,255,0.6);
+            color: rgba(212,196,163,0.6);
             position: relative;
             z-index: 10;
         }
@@ -268,12 +275,22 @@
         var isRotating = true;
         var animationId = null;
 
-        // 获取颜色
+        // 获取颜色 - 基于嫩鹅黄配色方案
         function getColor(index) {
             var colors = [
-                '#ff6b6b', '#4ecdc4', '#ffe66d', '#ff9f43', 
-                '#a8e6cf', '#ffd3b6', '#ffaaa5', '#9b59b6',
-                '#3498db', '#e74c3c', '#2ecc71', '#f1c40f'
+                '#ebc167',  // 嫩鹅黄 (主色)
+                '#d4a76a',  // 卡其黄
+                '#c4a35a',  // 秋香色
+                '#e8c47a',  // 麦秆黄
+                '#8B7355',  // 绿棕色
+                '#d4b896',  // 藕色
+                '#f0d88a',  // 茉莉黄
+                '#8B6914',  // 深驼色
+                '#e8cf8c',  // 香槟黄
+                '#c9a9e6',  // 粉熏衣紫 (对比)
+                '#a89bb5',  // 紫罗兰灰
+                '#8b7ba8',  // 暗淡紫
+                '#9f8abf'   // 风信子淡紫
             ];
             return colors[index % colors.length];
         }
@@ -326,14 +343,14 @@
                     });
                     
                     elem.addEventListener('mouseenter', function() {
-                        this.style.background = 'rgba(255,255,255,0.35)';
+                        this.style.background = 'rgba(235,193,103,0.35)';
                         this.style.zIndex = '100';
                         this.style.transform = this.style.transform + ' scale(1.1)';
                     });
                     
                     elem.addEventListener('mouseleave', function() {
                         if (this !== currentHighlighted) {
-                            this.style.background = 'rgba(255,255,255,0.15)';
+                            this.style.background = 'rgba(235,193,103,0.15)';
                             this.style.zIndex = '1';
                             var newTransform = this.style.transform.replace(' scale(1.1)', '');
                             this.style.transform = newTransform;
@@ -377,14 +394,14 @@
         // 高亮词语
         function highlightWord(element, word) {
             if (currentHighlighted) {
-                currentHighlighted.style.background = 'rgba(255,255,255,0.15)';
+                currentHighlighted.style.background = 'rgba(235,193,103,0.15)';
                 currentHighlighted.style.boxShadow = 'none';
                 var oldTransform = currentHighlighted.style.transform.replace(' scale(1.4)', '');
                 currentHighlighted.style.transform = oldTransform;
             }
             
-            element.style.background = 'rgba(255,215,0,0.4)';
-            element.style.boxShadow = '0 0 20px rgba(255,215,0,0.6)';
+            element.style.background = 'rgba(235,193,103,0.5)';
+            element.style.boxShadow = '0 0 20px rgba(235,193,103,0.8)';
             element.style.transform = element.style.transform + ' scale(1.4)';
             
             currentHighlighted = element;
@@ -447,7 +464,7 @@
                     if (sizeVal) sizeVal.innerText = '1.00';
                     
                     if (currentHighlighted) {
-                        currentHighlighted.style.background = 'rgba(255,255,255,0.15)';
+                        currentHighlighted.style.background = 'rgba(235,193,103,0.15)';
                         currentHighlighted.style.boxShadow = 'none';
                         var oldTransform = currentHighlighted.style.transform.replace(' scale(1.4)', '');
                         currentHighlighted.style.transform = oldTransform;
@@ -480,3 +497,7 @@
 </script>
 </body>
 </html>
+'''
+
+# 显示HTML
+display(HTML(html_code))
