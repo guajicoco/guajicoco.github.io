@@ -1,0 +1,482 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>赣语方言文化 - 3D词云展示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        .wrapper {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+            position: relative;
+            z-index: 10;
+        }
+        .header h1 {
+            font-size: 2em;
+            color: #ffd700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .header p {
+            font-size: 1em;
+            color: #f0f0f0;
+        }
+        .cloud-container {
+            width: 100%;
+            height: 60vh;
+            min-height: 500px;
+            position: relative;
+            perspective: 1200px;
+            margin: 20px 0;
+        }
+        #wordCloud {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-style: preserve-3d;
+        }
+        .word {
+            position: absolute;
+            cursor: pointer;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            user-select: none;
+            padding: 5px 12px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            white-space: nowrap;
+            font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+            backdrop-filter: blur(4px);
+        }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            min-width: 260px;
+            z-index: 20;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .controls h3 {
+            color: #ffd700;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+        .control-item {
+            margin: 10px 0;
+        }
+        .control-item label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.2);
+            -webkit-appearance: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+        }
+        button {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 5px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            max-width: 320px;
+            z-index: 20;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .info-panel h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        #selectedWord {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #ddd;
+        }
+        .word-meaning {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            position: relative;
+            z-index: 10;
+        }
+        @media (max-width: 768px) {
+            .controls, .info-panel {
+                position: relative;
+                margin: 10px;
+                bottom: auto;
+                left: auto;
+                right: auto;
+            }
+            .cloud-container {
+                height: 50vh;
+                min-height: 400px;
+            }
+            .word {
+                font-size: 14px !important;
+                padding: 2px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <h1>🗣️ 赣语方言文化传承</h1>
+        <p>点击任意词语查看详细解释 | 双击词语突出显示</p>
+    </div>
+    
+    <div class="cloud-container">
+        <div id="wordCloud"></div>
+    </div>
+    
+    <div class="controls">
+        <h3>🎮 控制面板</h3>
+        <div class="control-item">
+            <label>🔄 旋转速度 <span id="speedValue">0.5</span></label>
+            <input type="range" id="rotationSpeed" min="0" max="2" step="0.1" value="0.5">
+        </div>
+        <div class="control-item">
+            <label>📏 词云大小 <span id="sizeValue">1.0</span></label>
+            <input type="range" id="wordSize" min="0.5" max="1.5" step="0.05" value="1.0">
+        </div>
+        <button id="resetView">🔄 重置视图</button>
+        <button id="toggleRotation" style="margin-top: 8px;">⏸️ 暂停旋转</button>
+    </div>
+    
+    <div class="info-panel">
+        <h3>📖 词汇详解</h3>
+        <div id="selectedWord">✨ 点击上方任意词语<br>查看赣语方言的详细解释</div>
+    </div>
+    
+    <div class="footer">
+        赣南文化数字展示 | 传承方言文化，守护地方记忆
+    </div>
+</div>
+
+<script>
+    (function() {
+        // 赣语词汇数据
+        var wordData = {
+            "猪牯里": 8, "昼饭": 7, "后生": 9, "亲兄户弟": 6, "牯公": 5,
+            "打摆子": 4, "谷筛": 3, "米筛": 3, "铲里": 4, "新妇": 7,
+            "定日": 5, "暝年": 4, "蚌壳里": 3, "晒垫": 3, "嘛婶": 5,
+            "蛤蟆": 6, "阿里阿达": 2, "姆妈": 10, "呷饭": 9, "嘛标致": 4,
+            "赣语": 12, "嘛靓": 4, "嚄草": 3, "细伢子": 8, "暴肚烂肠": 2, 
+            "木木嘟嘟": 3
+        };
+
+        // 词汇解释
+        var wordMeanings = {
+            "猪牯里": "🐗 公猪。赣语中对公猪的特定称呼。",
+            "昼饭": "🍚 午饭。'昼'指中午，保留了古汉语用法。",
+            "后生": "👦 年轻人。形容年轻有活力。",
+            "亲兄户弟": "👨‍👦 亲兄弟。强调血缘关系亲密。",
+            "牯公": "🐮 公牛。'牯'在赣语中指雄性。",
+            "打摆子": "🤒 患疟疾。形容发冷发抖的症状。",
+            "谷筛": "🌾 筛谷子的农具。",
+            "米筛": "🍚 筛米的工具，筛孔更细。",
+            "铲里": "🛠️ 铲子。工具的地方化称呼。",
+            "新妇": "👰 儿媳妇。古汉语词汇的保留。",
+            "定日": "📅 改天、另约时间。",
+            "暝年": "📆 明年。'暝'表示未来的时间。",
+            "蚌壳里": "🐚 蚌壳。对水生物外壳的称呼。",
+            "晒垫": "☀️ 晒谷物的竹席。",
+            "嘛婶": "👩 婶婶。对长辈女性的称呼。",
+            "蛤蟆": "🐸 青蛙。地方俗称。",
+            "阿里阿达": "😵 糊里糊涂、不清不楚。",
+            "姆妈": "👩‍👧 妈妈。亲切的家庭称呼。",
+            "呷饭": "🍜 吃饭。'呷'是古汉语的保留。",
+            "嘛标致": "😕 不漂亮。'嘛'表示否定。",
+            "赣语": "🗣️ 江西方言，中国七大方言之一。",
+            "嘛靓": "😕 不漂亮。与'嘛标致'同义。",
+            "嚄草": "🌿 除草。农事活动的表达。",
+            "细伢子": "👶 小孩子。'细'表示小。",
+            "暴肚烂肠": "😈 形容人很坏。",
+            "木木嘟嘟": "🐢 反应迟钝。"
+        };
+
+        // 全局变量
+        var rotationAngleX = 0;
+        var rotationAngleY = 0;
+        var rotationSpeed = 0.5;
+        var scaleVal = 1.0;
+        var currentHighlighted = null;
+        var wordElements = [];
+        var isRotating = true;
+        var animationId = null;
+
+        // 获取颜色
+        function getColor(index) {
+            var colors = [
+                '#ff6b6b', '#4ecdc4', '#ffe66d', '#ff9f43', 
+                '#a8e6cf', '#ffd3b6', '#ffaaa5', '#9b59b6',
+                '#3498db', '#e74c3c', '#2ecc71', '#f1c40f'
+            ];
+            return colors[index % colors.length];
+        }
+
+        // 创建词云
+        function createWordCloud() {
+            var wordCloud = document.getElementById('wordCloud');
+            if (!wordCloud) return;
+            wordCloud.innerHTML = '';
+            wordElements = [];
+            
+            var words = Object.keys(wordData);
+            var maxFreq = 0;
+            for (var w in wordData) {
+                if (wordData[w] > maxFreq) maxFreq = wordData[w];
+            }
+            var radius = 160;
+            
+            for (var i = 0; i < words.length; i++) {
+                var word = words[i];
+                var frequency = wordData[word];
+                var size = (frequency / maxFreq) * 22 + 12;
+                
+                var wordElement = document.createElement('div');
+                wordElement.className = 'word';
+                wordElement.textContent = word;
+                wordElement.style.fontSize = size + 'px';
+                wordElement.style.color = getColor(i);
+                
+                // 球面分布
+                var phi = Math.acos(-1 + (2 * i) / words.length);
+                var theta = Math.sqrt(words.length * Math.PI) * phi;
+                
+                var x = radius * Math.cos(theta) * Math.sin(phi);
+                var y = radius * Math.sin(theta) * Math.sin(phi);
+                var z = radius * Math.cos(phi);
+                
+                wordElement.setAttribute('data-x', x);
+                wordElement.setAttribute('data-y', y);
+                wordElement.setAttribute('data-z', z);
+                
+                // 事件绑定
+                (function(w, elem) {
+                    elem.addEventListener('click', function() {
+                        showWordMeaning(w);
+                    });
+                    
+                    elem.addEventListener('dblclick', function() {
+                        highlightWord(elem, w);
+                    });
+                    
+                    elem.addEventListener('mouseenter', function() {
+                        this.style.background = 'rgba(255,255,255,0.35)';
+                        this.style.zIndex = '100';
+                        this.style.transform = this.style.transform + ' scale(1.1)';
+                    });
+                    
+                    elem.addEventListener('mouseleave', function() {
+                        if (this !== currentHighlighted) {
+                            this.style.background = 'rgba(255,255,255,0.15)';
+                            this.style.zIndex = '1';
+                            var newTransform = this.style.transform.replace(' scale(1.1)', '');
+                            this.style.transform = newTransform;
+                        }
+                    });
+                })(word, wordElement);
+                
+                wordCloud.appendChild(wordElement);
+                wordElements.push(wordElement);
+            }
+            
+            updateWordPositions();
+        }
+
+        // 更新位置
+        function updateWordPositions() {
+            var wordCloud = document.getElementById('wordCloud');
+            if (!wordCloud) return;
+            wordCloud.style.transform = 'translate(-50%, -50%) rotateX(' + rotationAngleX + 'rad) rotateY(' + rotationAngleY + 'rad) scale(' + scaleVal + ')';
+            
+            for (var i = 0; i < wordElements.length; i++) {
+                var elem = wordElements[i];
+                var x = parseFloat(elem.getAttribute('data-x'));
+                var y = parseFloat(elem.getAttribute('data-y'));
+                var z = parseFloat(elem.getAttribute('data-z'));
+                
+                var cosY = Math.cos(rotationAngleY);
+                var sinY = Math.sin(rotationAngleY);
+                var cosX = Math.cos(rotationAngleX);
+                var sinX = Math.sin(rotationAngleX);
+                
+                var tempX = x * cosY - z * sinY;
+                var tempZ = x * sinY + z * cosY;
+                var finalY = y * cosX - tempZ * sinX;
+                var finalZ = y * sinX + tempZ * cosX;
+                
+                elem.style.transform = 'translate3d(' + tempX + 'px, ' + finalY + 'px, ' + finalZ + 'px)';
+            }
+        }
+
+        // 高亮词语
+        function highlightWord(element, word) {
+            if (currentHighlighted) {
+                currentHighlighted.style.background = 'rgba(255,255,255,0.15)';
+                currentHighlighted.style.boxShadow = 'none';
+                var oldTransform = currentHighlighted.style.transform.replace(' scale(1.4)', '');
+                currentHighlighted.style.transform = oldTransform;
+            }
+            
+            element.style.background = 'rgba(255,215,0,0.4)';
+            element.style.boxShadow = '0 0 20px rgba(255,215,0,0.6)';
+            element.style.transform = element.style.transform + ' scale(1.4)';
+            
+            currentHighlighted = element;
+            showWordMeaning(word);
+        }
+
+        // 显示解释
+        function showWordMeaning(word) {
+            var meaning = wordMeanings[word] || '📖 该词汇的详细解释正在整理中...';
+            var frequency = wordData[word];
+            var panel = document.getElementById('selectedWord');
+            if (panel) {
+                panel.innerHTML = '<span class="word-meaning">📌 ' + word + '</span><br>🎵 使用频率: ' + frequency + '/10<br>📝 ' + meaning;
+            }
+        }
+
+        // 动画
+        function animate() {
+            if (isRotating) {
+                rotationAngleY += 0.002 * rotationSpeed;
+                rotationAngleX += 0.001 * rotationSpeed;
+                updateWordPositions();
+            }
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 设置控制
+        function setupControls() {
+            var speedSlider = document.getElementById('rotationSpeed');
+            var speedVal = document.getElementById('speedValue');
+            var sizeSlider = document.getElementById('wordSize');
+            var sizeVal = document.getElementById('sizeValue');
+            var resetBtn = document.getElementById('resetView');
+            var toggleBtn = document.getElementById('toggleRotation');
+            
+            if (speedSlider) {
+                speedSlider.addEventListener('input', function(e) {
+                    rotationSpeed = parseFloat(e.target.value);
+                    if (speedVal) speedVal.innerText = rotationSpeed.toFixed(1);
+                });
+            }
+            
+            if (sizeSlider) {
+                sizeSlider.addEventListener('input', function(e) {
+                    scaleVal = parseFloat(e.target.value);
+                    updateWordPositions();
+                    if (sizeVal) sizeVal.innerText = scaleVal.toFixed(2);
+                });
+            }
+            
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    rotationAngleX = 0;
+                    rotationAngleY = 0;
+                    rotationSpeed = 0.5;
+                    scaleVal = 1.0;
+                    if (speedSlider) speedSlider.value = '0.5';
+                    if (sizeSlider) sizeSlider.value = '1.0';
+                    if (speedVal) speedVal.innerText = '0.5';
+                    if (sizeVal) sizeVal.innerText = '1.00';
+                    
+                    if (currentHighlighted) {
+                        currentHighlighted.style.background = 'rgba(255,255,255,0.15)';
+                        currentHighlighted.style.boxShadow = 'none';
+                        var oldTransform = currentHighlighted.style.transform.replace(' scale(1.4)', '');
+                        currentHighlighted.style.transform = oldTransform;
+                        currentHighlighted = null;
+                    }
+                    
+                    updateWordPositions();
+                });
+            }
+            
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    isRotating = !isRotating;
+                    toggleBtn.innerHTML = isRotating ? '⏸️ 暂停旋转' : '▶️ 开始旋转';
+                });
+            }
+        }
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            createWordCloud();
+            setupControls();
+            animate();
+            
+            window.addEventListener('resize', function() {
+                setTimeout(updateWordPositions, 100);
+            });
+        });
+    })();
+</script>
+</body>
+</html>
